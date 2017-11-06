@@ -5,7 +5,19 @@
   
 
 ;;;;;;;;;;;;;;;
+;; DECLARE SOME VARIABLES HERE
+  .rsset $0000  ;;start variables at ram location 0
+buttons1   .rs 1  ; player 1 gamepad buttons, one bit per button
+bulletIsActive .rs 1 ; is bullet active?
 
+CONTROLLER_A      = %10000000
+CONTROLLER_B      = %01000000
+CONTROLLER_SELECT = %00100000
+CONTROLLER_START  = %00010000
+CONTROLLER_UP     = %00001000
+CONTROLLER_DOWN   = %00000100
+CONTROLLER_LEFT   = %00000010
+CONTROLLER_RIGHT  = %00000001
     
   .bank 0
   .org $C000 
@@ -71,7 +83,7 @@ LoadSpritesLoop:
   LDA sprites, x        ; load data from address (sprites +  x)
   STA $0200, x          ; store into RAM address ($0200 + x)
   INX                   ; X = X + 1
-  CPX #$20              ; Compare X to hex $20, decimal 32
+  CPX #$1C              ; Compare X to hex $20, decimal 32
   BNE LoadSpritesLoop   ; Branch to LoadSpritesLoop if compare was Not Equal to zero
                         ; if compare was equal to 32, keep going down
               
@@ -94,136 +106,169 @@ NMI:
   LDA #$02
   STA $4014       ; set the high byte (02) of the RAM address, start the transfer
 
-
-LatchController:
-  LDA #$01
-  STA $4016
-  LDA #$00
-  STA $4016       ; tell both the controllers to latch buttons
-
-  LDA $4016
-  LDA $4016       
-  LDA $4016       
-  LDA $4016              
-
-ReadD: 
-  LDA $4016       ; player 1 - B
-  AND #%00000001  ; only look at bit 0
-  BEQ ReadDDone   ; branch to ReadBDone if button is NOT pressed (0)
-                  ; add instructions here to do something when button IS pressed (1)
-  LDA $0200       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
-  STA $0200       ; save sprite X position
-
-
-  LDA $0204       
-  SEC             
-  SBC #$01        
-  STA $0204 
-
-  LDA $0208       
-  SEC             
-  SBC #$01        
-  STA $0208
-
-  LDA $020C       
-  SEC             
-  SBC #$01        
-  STA $020C      
-ReadDDone:        ; handling this button is done
-
-
-ReadC: 
-  LDA $4016       ; player 1 - C
-  AND #%00000001  ; only look at bit 0
-  BEQ ReadCDone   ; branch to ReadADone if button is NOT pressed (0)
-                  ; add instructions here to do something when button IS pressed (1)
-  LDA $0200       ; load sprite X position   
-  CLC             ; make sure the carry flag is clear
-  ADC #$01        ; A = A + 1
-  STA $0200       ; save sprite X position
-
-  LDA $0204       
-  CLC             
-  ADC #$01        
-  STA $0204       
-
-  LDA $0208       
-  CLC             
-  ADC #$01        
-  STA $0208       
-
-  LDA $020C       
-  CLC             
-  ADC #$01        
-  STA $020C       
-
-ReadCDone:        ; handling this button is done
+  ;Update enemy movement
+EnemyMove:
+  LDA $0214
+  CLC
+  ADC #1
+  STA $0214
   
-ReadB: 
-  LDA $4016       ; player 1 - B
-  AND #%00000001  ; only look at bit 0
-  BEQ ReadBDone   ; branch to ReadBDone if button is NOT pressed (0)
+  LDA $0218
+  CLC
+  ADC #1
+  STA $0218
+
+UpdateBullet:
+  LDA bulletIsActive
+  BEQ UpdateBulletDone
+  
+  ; Update bullet position
+  LDA $0210
+  SEC
+  SBC #1
+  STA $0210
+  
+  ; Check if bullet is off top of screen
+  BCS .BulletNotOffTop
+  LDA #0
+  STA bulletIsActive
+  JMP UpdateBulletDone
+.BulletNotOffTop
+  
+  ; Check collision
+ColCheck1 .macro
+  LDA $0210 ; bullet Y
+  SEC
+  SBC \1 ; enemy y
+  CLC
+  ADC #4
+  BMI .ColDone\@ ; Branch if bulletY - enemyY + 4 < 0
+  SEC
+  SBC #8
+  BPL .ColDone\@ ; branch if bulletY - enemyY - 4 > 0
+  
+  LDA $0213 ; bullet X
+  SEC
+  SBC \1 + 3 ; enemy X
+  CLC
+  ADC #4
+  BMI .ColDone\@ ; Branch if bulletX - enemyX + 4 < 0
+  SEC
+  SBC #8
+  BPL .ColDone\@ ; branch if bulletX - enemyX - 4 > 0
+  
+  LDA #0
+  STA bulletIsActive ; kill the bullet
+  STA $0210
+  ;STA $0211
+ ; STA $0212
+  STA $0213
+  STA \1 
+  ;STA \1 + 1
+  ;STA \1 + 2
+  STA \1 + 3
+.ColDone\@: 
+  .endm
+  ColCheck1 $0214
+  ColCheck1 $0218
+UpdateBulletDone:
+
+
+  JSR ReadController1
+
+ReadLeft: 
+  LDA buttons1       ; player 1 - A
+  AND #CONTROLLER_LEFT  ; only look at bit 0
+  BEQ .Done   ; branch to ReadADone if button is NOT pressed (0)
                   ; add instructions here to do something when button IS pressed (1)
-  LDA $0203       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
-  STA $0203       ; save sprite X position
-
-
-  LDA $0207       
-  SEC             
-  SBC #$01        
-  STA $0207 
-
-  LDA $020B       
-  SEC             
-  SBC #$01        
-  STA $020B
-
-  LDA $020F       
-  SEC             
-  SBC #$01        
-  STA $020F      
-ReadBDone:        ; handling this button is done
-
-
-
-ReadA: 
-  LDA $4016       ; player 1 - A
-  AND #%00000001  ; only look at bit 0
-  BEQ ReadADone   ; branch to ReadADone if button is NOT pressed (0)
-                  ; add instructions here to do something when button IS pressed (1)
-  LDA $0203       ; load sprite X position   
-  CLC             ; make sure the carry flag is clear
-  ADC #$01        ; A = A + 1
-  STA $0203       ; save sprite X position
-
-  LDA $0207       
-  CLC             
-  ADC #$01        
-  STA $0207       
-
-  LDA $020B       
-  CLC             
-  ADC #$01        
-  STA $020B       
-
-  LDA $020F       
-  CLC             
-  ADC #$01        
-  STA $020F       
-
-
-ReadADone:        ; handling this button is done
+  LDX #0
+.Loop:
+  LDA $0203, x    ; load sprite X position
+  SEC             ; make sure the carry flag is clear
+  SBC #$01        ; A = A + 1
+  STA $0203, x    ; save sprite X position
+  INX
+  INX
+  INX
+  INX
+  CPX #$10
+  BNE .Loop       ; Stop looping after 4 sprites (X = 4*4 = 16)
+  
+ 
+.Done:        ; handling this button is done
   
 
+ReadRight: 
+  LDA buttons1       ; player 1 - B
+  AND #CONTROLLER_RIGHT  ; only look at bit 0
+  BEQ .Done   ; branch to ReadBDone if button is NOT pressed (0)
+                  ; add instructions here to do something when button IS pressed (1)
+  LDX #0
+.Loop:
+  LDA $0203, x    ; load sprite X position
+  CLC             ; make sure the carry flag is clear
+  ADC #$01        ; A = A + 1
+  STA $0203, x    ; save sprite X position
+  INX
+  INX
+  INX
+  INX
+  CPX #$10
+  BNE .Loop
+.Done:        ; handling this button is done
 
-
+ReadA:
+  LDA buttons1
+  AND #CONTROLLER_A
+  BEQ .Done
+  
+  LDA bulletIsActive
+  BNE .Done
+  ;spawn enemy
+  LDA #$0		;vert
+  STA $0218
+  LDA #$38		;tile
+  LDA #0		;atr
+  LDA #$80		;horiz
+  STA $021C
+  
+  
+  
+  ; Fire bullet
+  LDA $0200  ; Vertical
+  STA $0210
+  LDA #$64   ; Tile
+  STA $0211
+  LDA #0     ; Attributes
+  STA $0212
+  LDA $0203  ; Horizontal
+  CLC
+  ADC #4
+  STA $0213
+  
+  LDA #1
+  STA bulletIsActive
+  
+.Done:
   
   RTI             ; return from interrupt
  
+ 
+ReadController1:
+  LDA #$01
+  STA $4016
+  LDA #$00
+  STA $4016
+  LDX #$08
+  
+ReadController1Loop:
+  LDA $4016
+  LSR A            ; bit0 -> Carry
+  ROL buttons1     ; bit0 <- Carry
+  DEX
+  BNE ReadController1Loop
+  RTS
+
 ;;;;;;;;;;;;;;  
   
   
@@ -233,13 +278,17 @@ ReadADone:        ; handling this button is done
 palette:
   .db $0F,$31,$32,$33,$34,$35,$36,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$0F
   .db $0F,$1C,$15,$14,$31,$02,$38,$3C,$0F,$1C,$15,$14,$31,$02,$38,$3C
-
+;4 bytes each sprite for LDA so 200 204 208 20C 210 + Hexdiecil
 sprites:
      ;vert tile attr horiz
   .db $80, $32, $00, $80   ;sprite 0
   .db $80, $33, $00, $88   ;sprite 1
   .db $88, $34, $00, $80   ;sprite 2
   .db $88, $35, $00, $88   ;sprite 3
+  .db $00, $00, $00, $00   ;bullet
+  .db $10, $38, $00, $45   ;enemy
+  .db $5, $37, $00, $80   ;enemy2
+  
 
   .org $FFFA     ;first of the three vectors starts here
   .dw NMI        ;when an NMI happens (once per frame if enabled) the 
