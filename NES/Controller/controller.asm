@@ -108,25 +108,25 @@ NMI:
 
   ;Update enemy movement
 EnemyMove:
-  LDA $0214
+  LDA $0210
   CLC
   ADC #1
-  STA $0214
+  STA $0210
   
-  LDA $0218
+  LDA $020c
   CLC
   ADC #1
-  STA $0218
+  STA $020c
 
 UpdateBullet:
   LDA bulletIsActive
   BEQ UpdateBulletDone
   
   ; Update bullet position
-  LDA $0210
+  LDA $0208
   SEC
   SBC #1
-  STA $0210
+  STA $0208
   
   ; Check if bullet is off top of screen
   BCS .BulletNotOffTop
@@ -137,7 +137,7 @@ UpdateBullet:
   
   ; Check collision
 ColCheck1 .macro
-  LDA $0210 ; bullet Y
+  LDA $0208 ; bullet Y
   SEC
   SBC \1 ; enemy y
   CLC
@@ -147,7 +147,7 @@ ColCheck1 .macro
   SBC #8
   BPL .ColDone\@ ; branch if bulletY - enemyY - 4 > 0
   
-  LDA $0213 ; bullet X
+  LDA $020b ; bullet X
   SEC
   SBC \1 + 3 ; enemy X
   CLC
@@ -159,18 +159,20 @@ ColCheck1 .macro
   
   LDA #0
   STA bulletIsActive ; kill the bullet
-  STA $0210
+  STA $0208
   ;STA $0211
  ; STA $0212
-  STA $0213
+  STA $020b
   STA \1 
   ;STA \1 + 1
   ;STA \1 + 2
   STA \1 + 3
 .ColDone\@: 
   .endm
-  ColCheck1 $0214
-  ColCheck1 $0218
+  ColCheck1 $0210
+  ColCheck1 $020c
+  
+  
 UpdateBulletDone:
 
 
@@ -191,7 +193,7 @@ ReadLeft:
   INX
   INX
   INX
-  CPX #$10
+  CPX #$08
   BNE .Loop       ; Stop looping after 4 sprites (X = 4*4 = 16)
   
  
@@ -213,7 +215,7 @@ ReadRight:
   INX
   INX
   INX
-  CPX #$10
+  CPX #$08
   BNE .Loop
 .Done:        ; handling this button is done
 
@@ -225,26 +227,26 @@ ReadA:
   LDA bulletIsActive
   BNE .Done
   ;spawn enemy
-  LDA #$0		;vert
-  STA $0218
-  LDA #$38		;tile
-  LDA #0		;atr
-  LDA #$80		;horiz
-  STA $021C
+  ;LDA #$0		;vert
+  ;STA $0218
+  ;LDA #$38		;tile
+  ;LDA #0		;atr
+  ;LDA #$80		;horiz
+  ;STA $021C
   
   
   
   ; Fire bullet
   LDA $0200  ; Vertical
-  STA $0210
-  LDA #$64   ; Tile
-  STA $0211
+  STA $0208
+  LDA #$01   ; Tile
+  STA $0209
   LDA #0     ; Attributes
-  STA $0212
+  STA $020a
   LDA $0203  ; Horizontal
   CLC
   ADC #4
-  STA $0213
+  STA $020b
   
   LDA #1
   STA bulletIsActive
@@ -281,13 +283,11 @@ palette:
 ;4 bytes each sprite for LDA so 200 204 208 20C 210 + Hexdiecil
 sprites:
      ;vert tile attr horiz
-  .db $80, $32, $00, $80   ;sprite 0
-  .db $80, $33, $00, $88   ;sprite 1
-  .db $88, $34, $00, $80   ;sprite 2
-  .db $88, $35, $00, $88   ;sprite 3
-  .db $00, $00, $00, $00   ;bullet
-  .db $10, $38, $00, $45   ;enemy
-  .db $5, $37, $00, $80   ;enemy2
+  .db $80, $00, $00, $80   ;sprite 0   0200
+  .db $88, $10, $00, $80   ;sprite 1	0204
+  .db $00, $11, $00, $00   ;bullet		0208
+  .db $10, $01, $00, $45   ;enemy		020c
+  .db $5, $01, $00, $80   ;enemy2		0216
   
 
   .org $FFFA     ;first of the three vectors starts here
@@ -303,4 +303,4 @@ sprites:
   
   .bank 2
   .org $0000
-  .incbin "mario.chr"   ;includes 8KB graphics file from SMB1
+  .incbin "CogsOfWar.chr"   ;includes 8KB graphics file from SMB1
