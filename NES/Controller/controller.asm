@@ -160,16 +160,12 @@ ColCheck1 .macro
   LDA #0
   STA bulletIsActive ; kill the bullet
   STA $0208
-  ;STA $0211
- ; STA $0212
   STA $020b
   STA \1 
-  ;STA \1 + 1
-  ;STA \1 + 2
   STA \1 + 3
 .ColDone\@: 
   .endm
-  ColCheck1 $0210
+  ColCheck1 $0210	;Kills the enemy the bullet hits
   ColCheck1 $020c
   
   
@@ -239,7 +235,7 @@ ReadA:
   ; Fire bullet
   LDA $0200  ; Vertical
   STA $0208
-  LDA #$01   ; Tile
+  LDA #$11   ; Tile
   STA $0209
   LDA #0     ; Attributes
   STA $020a
@@ -279,7 +275,7 @@ ReadController1Loop:
   .org $E000
 palette:
   .db $0F,$31,$32,$33,$34,$35,$36,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$0F
-  .db $0F,$1C,$15,$14,$31,$02,$38,$3C,$0F,$1C,$15,$14,$31,$02,$38,$3C
+  .db $0F,$20,$10,$00,$31,$02,$38,$3C,$0F,$1C,$15,$14,$31,$02,$38,$3C
 ;4 bytes each sprite for LDA so 200 204 208 20C 210 + Hexdiecil
 sprites:
      ;vert tile attr horiz
