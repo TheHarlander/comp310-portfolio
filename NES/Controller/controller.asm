@@ -113,7 +113,7 @@ timer1:
 	CLC
 	ADC #1
 	STA timer
-	CMP #100			;When hits this number do something
+	CMP #240			;When hits this number do something
 	BNE .Done
 	
 	;spawn enemy
@@ -222,27 +222,6 @@ ReadLeft:
  
 .Done:        ; handling this button is done
  
-ReadUp: 
-  LDA buttons1       ; player 1 - A
-  AND #CONTROLLER_UP  ; only look at bit 0
-  BEQ .Done   ; branch to ReadADone if button is NOT pressed (0)
-                  ; add instructions here to do something when button IS pressed (1)
-  LDX #0
-.Loop:
-  LDA $0203, x    ; load sprite X position
-  SEC             ; make sure the carry flag is clear
-  SBC #$01        ; A = A + 1
-  STA $0203, x    ; save sprite X position
-  INX
-  INX
-  INX
-  INX
-  CPX #$08
-  BNE .Loop       ; Stop looping after 4 sprites (X = 4*4 = 16)
-  
- 
-.Done:        ; handling this button is done
- 
 
 ReadRight: 
   LDA buttons1       ; player 1 - B
@@ -325,7 +304,7 @@ sprites:
   .db $80, $00, $00, $80   ;player1st   0200
   .db $88, $10, $00, $80   ;player2nd 	0204
   .db $00, $11, $00, $00   ;bullet		0208
-  .db $10, $01, $00, $45   ;enemy		020c
+  .db $10, $01, $00, $45   ;enemy1		020c
   .db $5, $01, $00, $80   ;enemy2		0210
   
 
