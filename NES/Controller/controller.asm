@@ -9,6 +9,7 @@
   .rsset $0000  ;;start variables at ram location 0
 buttons1   .rs 1  ; player 1 gamepad buttons, one bit per button
 bulletIsActive .rs 1 ; is bullet active?
+timer .rs 1
 
 CONTROLLER_A      = %10000000
 CONTROLLER_B      = %01000000
@@ -106,6 +107,32 @@ NMI:
   LDA #$02
   STA $4014       ; set the high byte (02) of the RAM address, start the transfer
 
+  ;timer system
+timer1:
+	LDA timer
+	CLC
+	ADC #1
+	STA timer
+	CMP #100			;When hits this number do something
+	BNE .Done
+	
+	;spawn enemy
+  LDA #$0		;vert
+  STA $0210
+  LDA #$01		;tile
+  STA $0211
+  LDA #0		;atr
+  STA $0212
+  LDA #$80		;horiz
+  STA $0213
+  LDA #0
+  STA timer
+	
+.Done:
+    
+  
+  
+  
   ;Update enemy movement
 EnemyMove:
   LDA $0210
@@ -194,7 +221,28 @@ ReadLeft:
   
  
 .Done:        ; handling this button is done
+ 
+ReadUp: 
+  LDA buttons1       ; player 1 - A
+  AND #CONTROLLER_UP  ; only look at bit 0
+  BEQ .Done   ; branch to ReadADone if button is NOT pressed (0)
+                  ; add instructions here to do something when button IS pressed (1)
+  LDX #0
+.Loop:
+  LDA $0203, x    ; load sprite X position
+  SEC             ; make sure the carry flag is clear
+  SBC #$01        ; A = A + 1
+  STA $0203, x    ; save sprite X position
+  INX
+  INX
+  INX
+  INX
+  CPX #$08
+  BNE .Loop       ; Stop looping after 4 sprites (X = 4*4 = 16)
   
+ 
+.Done:        ; handling this button is done
+ 
 
 ReadRight: 
   LDA buttons1       ; player 1 - B
@@ -215,6 +263,7 @@ ReadRight:
   BNE .Loop
 .Done:        ; handling this button is done
 
+
 ReadA:
   LDA buttons1
   AND #CONTROLLER_A
@@ -222,13 +271,7 @@ ReadA:
   
   LDA bulletIsActive
   BNE .Done
-  ;spawn enemy
-  ;LDA #$0		;vert
-  ;STA $0218
-  ;LDA #$38		;tile
-  ;LDA #0		;atr
-  ;LDA #$80		;horiz
-  ;STA $021C
+  
   
   
   
@@ -279,11 +322,11 @@ palette:
 ;4 bytes each sprite for LDA so 200 204 208 20C 210 + Hexdiecil
 sprites:
      ;vert tile attr horiz
-  .db $80, $00, $00, $80   ;sprite 0   0200
-  .db $88, $10, $00, $80   ;sprite 1	0204
+  .db $80, $00, $00, $80   ;player1st   0200
+  .db $88, $10, $00, $80   ;player2nd 	0204
   .db $00, $11, $00, $00   ;bullet		0208
   .db $10, $01, $00, $45   ;enemy		020c
-  .db $5, $01, $00, $80   ;enemy2		0216
+  .db $5, $01, $00, $80   ;enemy2		0210
   
 
   .org $FFFA     ;first of the three vectors starts here
