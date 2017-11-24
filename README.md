@@ -1,2 +1,5 @@
 # comp310-portfolio
-Base repository for COMP310 assignment 1
+
+
+Please follow step 3 of this guide.
+https://github.com/Falmouth-Games-Academy/comp310-wiki/wiki/(0)-NES-Set-up 
